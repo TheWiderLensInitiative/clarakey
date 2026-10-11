@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+*.vault
+.clarakey.lock
+vault/
+backups/
+dist/
+*.key
+*.pem
+*.log

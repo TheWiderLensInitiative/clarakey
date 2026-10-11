@@ -1,0 +1,50 @@
+test_auto_lock_activity_timeout_and_never (test_core.ModelPolicyTests.test_auto_lock_activity_timeout_and_never) ... ok
+test_clipboard_ownership_new_identical_content_and_never (test_core.ModelPolicyTests.test_clipboard_ownership_new_identical_content_and_never) ... ok
+test_increasing_bounded_throttle_and_reset (test_core.ModelPolicyTests.test_increasing_bounded_throttle_and_reset) ... ok
+test_password_generator_groups_and_randomness (test_core.ModelPolicyTests.test_password_generator_groups_and_randomness) ... ok
+test_schema_and_settings_rejected (test_core.ModelPolicyTests.test_schema_and_settings_rejected) ... ok
+test_search_only_metadata (test_core.ModelPolicyTests.test_search_only_metadata) ... ok
+test_strength_is_length_hint (test_core.ModelPolicyTests.test_strength_is_length_hint) ... ok
+test_all_rfc6238_vectors_and_independent_pyca (test_core.TotpTests.test_all_rfc6238_vectors_and_independent_pyca) ... ok
+test_invalid_uris_and_secrets (test_core.TotpTests.test_invalid_uris_and_secrets) ... ok
+test_six_digits_nondefault_period_boundaries (test_core.TotpTests.test_six_digits_nondefault_period_boundaries) ... ok
+test_uri_defaults_and_custom (test_core.TotpTests.test_uri_defaults_and_custom) ... ok
+test_all_credential_types_edit_delete_and_used_codes (test_core.VaultTests.test_all_credential_types_edit_delete_and_used_codes) ... ok
+test_atomic_save_failed_replace_preserves_old_and_memory (test_core.VaultTests.test_atomic_save_failed_replace_preserves_old_and_memory) ... ok
+test_backup_restore_different_password_keeps_current_password (test_core.VaultTests.test_backup_restore_different_password_keeps_current_password) ... ok
+test_ciphertext_contains_no_credentials (test_core.VaultTests.test_ciphertext_contains_no_credentials) ... ok
+test_create_correct_unlock_and_persistence (test_core.VaultTests.test_create_correct_unlock_and_persistence) ... ok
+test_duplicate_json_keys_and_deep_json (test_core.VaultTests.test_duplicate_json_keys_and_deep_json) ... ok
+test_export_explicit_no_clobber (test_core.VaultTests.test_export_explicit_no_clobber) ... ok
+test_external_change_prevents_overwrite (test_core.VaultTests.test_external_change_prevents_overwrite) ... ok
+test_flat_layout (test_core.VaultTests.test_flat_layout) ... ok
+test_fsync_failure_preserves_old (test_core.VaultTests.test_fsync_failure_preserves_old) ... ok
+test_fuzz_envelope_fail_closed (test_core.VaultTests.test_fuzz_envelope_fail_closed) ... ok
+test_independent_vault_salts (test_core.VaultTests.test_independent_vault_salts) ... ok
+test_interrupted_pending_does_not_replace_valid_vault (test_core.VaultTests.test_interrupted_pending_does_not_replace_valid_vault) ... ok
+test_invalid_authenticated_payload (test_core.VaultTests.test_invalid_authenticated_payload) ... ok
+test_kdf_bounds_before_derivation (test_core.VaultTests.test_kdf_bounds_before_derivation) ... ok
+test_lock_discards_state_and_wipes_mutable_key (test_core.VaultTests.test_lock_discards_state_and_wipes_mutable_key) ... ok
+test_locked_restore_into_empty_portable_directory (test_core.VaultTests.test_locked_restore_into_empty_portable_directory) ... ok
+test_locked_restore_recovers_corrupt_current_vault (test_core.VaultTests.test_locked_restore_recovers_corrupt_current_vault) ... ok
+test_locked_restore_requires_confirmation_and_validates_before_write (test_core.VaultTests.test_locked_restore_requires_confirmation_and_validates_before_write) ... ok
+test_locked_restore_stops_on_backup_io_failure (test_core.VaultTests.test_locked_restore_stops_on_backup_io_failure) ... ok
+test_private_permissions (test_core.VaultTests.test_private_permissions) ... ok
+test_random_nonce_every_save (test_core.VaultTests.test_random_nonce_every_save) ... ok
+test_removed_directory_detected (test_core.VaultTests.test_removed_directory_detected) ... ok
+test_replacement_readback_failure_preserves_vault (test_core.VaultTests.test_replacement_readback_failure_preserves_vault) ... ok
+test_restore_confirmation_and_bad_backup_do_not_modify (test_core.VaultTests.test_restore_confirmation_and_bad_backup_do_not_modify) ... ok
+test_second_instance_excluded (test_core.VaultTests.test_second_instance_excluded) ... ok
+test_symlink_and_hardlink_refused (test_core.VaultTests.test_symlink_and_hardlink_refused) ... ok
+test_tamper_all_header_regions_ciphertext_and_tag (test_core.VaultTests.test_tamper_all_header_regions_ciphertext_and_tag) ... ok
+test_truncated_and_oversized_vault (test_core.VaultTests.test_truncated_and_oversized_vault) ... ok
+test_unsupported_version (test_core.VaultTests.test_unsupported_version) ... ok
+test_wipe_invalidates_borrowed_entry_collections (test_core.VaultTests.test_wipe_invalidates_borrowed_entry_collections) ... ok
+test_wrong_password_rejected (test_core.VaultTests.test_wrong_password_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 43 tests in 4.629s
+
+OK
+PASS: relocated backend, three processes, create/reopen/wrong-password/RFC TOTP/credentials/lock/backup/restore/encrypted-at-rest.
+BLOCKED: no accessible GTK display; GUI acceptance did not run.

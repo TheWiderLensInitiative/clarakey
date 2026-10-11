@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=ClaraKey
+Comment=Portable offline encrypted authentication vault
+Exec=ClaraKey
+Icon=clarakey
+Categories=Utility;Security;
+Terminal=false
+StartupNotify=true

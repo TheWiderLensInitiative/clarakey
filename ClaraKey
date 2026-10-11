@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+CLARAKEY_DIR=$(CDPATH= cd -- "$(dirname -- "$(readlink -f -- "$0")")" && pwd)
+exec python3 -I -B "$CLARAKEY_DIR/run.py" --portable-dir "$CLARAKEY_DIR" "$@"

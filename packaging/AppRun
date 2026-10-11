@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+CLARAKEY_BUNDLE=$(CDPATH= cd -- "$(dirname -- "$(readlink -f -- "$0")")" && pwd)
+if [ -n "${APPIMAGE:-}" ]; then
+    CLARAKEY_PORTABLE=$(dirname -- "$(readlink -f -- "$APPIMAGE")")
+else
+    CLARAKEY_PORTABLE=$CLARAKEY_BUNDLE
+fi
+export GI_TYPELIB_PATH="$CLARAKEY_BUNDLE/runtime/lib/girepository-1.0"
+export GIO_MODULE_DIR="$CLARAKEY_BUNDLE/runtime/lib/gio/modules"
+export GIO_EXTRA_MODULES="$CLARAKEY_BUNDLE/runtime/lib/gio/modules"
+export FONTCONFIG_FILE="$CLARAKEY_BUNDLE/runtime/etc/fonts.conf"
+export FONTCONFIG_PATH="$CLARAKEY_BUNDLE/runtime/etc"
+export XDG_DATA_DIRS="$CLARAKEY_BUNDLE/runtime/share:/usr/share"
+export GSETTINGS_BACKEND=memory
+export GSK_RENDERER=cairo
+export OPENSSL_CONF=/dev/null
+unset PYTHONPATH PYTHONHOME
+exec "$CLARAKEY_BUNDLE/runtime/ld-linux-x86-64.so.2" --library-path "$CLARAKEY_BUNDLE/runtime/lib" \
+    "$CLARAKEY_BUNDLE/runtime/bin/python3" -I -B "$CLARAKEY_BUNDLE/app/run.py" --portable-dir "$CLARAKEY_PORTABLE" "$@"
