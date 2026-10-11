@@ -1,5 +1,17 @@
 # ClaraKey verification results — 2026-10-03
 
+**Update 2026-10-10:** the real GTK acceptance run now passes. `./test.sh` on Ubuntu 26.04.1
+(Python 3.14.4, GTK 4.22.4, Xvfb with `GDK_BACKEND=x11 GSK_RENDERER=cairo`) ran:
+
+* **PASS: 53 automated unit/security/desktop/packaging tests** (about 4.8 seconds).
+* **PASS: process acceptance:** relocated backend, three processes,
+  create/reopen/wrong-password/RFC TOTP/credentials/lock/backup/restore/encrypted-at-rest.
+* **PASS: real GTK acceptance:** create/restart/wrong-password/TOTP/all-six-types/lock/
+  backup/restore/restart, with real widgets and no mocked GUI API.
+
+The "BLOCKED: real GTK acceptance" entry below is kept as the 2026-10-03 record. Still not covered:
+physical USB behavior on other machines, other distributions, and the AppImage build.
+
 **1.0.1 follow-up:** see [the desktop input fix](DESKTOP_FIX_1.0.1.md). The suite
 now includes the original 43 tests, seven GTK input/diagnostic regressions and
 three archive-safety regressions. Historical V1 results below remain relevant;

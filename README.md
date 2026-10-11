@@ -7,10 +7,9 @@ network service is part of ClaraKey. Normal operation is offline.
 
 **Release status:** V1 development build, patched to 1.0.1. See
 [the desktop input fix](docs/DESKTOP_FIX_1.0.1.md). Backend tests and portable
-runtime verification are automated. This build environment blocks graphical
-display sockets, so real GUI acceptance remains unverified here. Read
-[the exact test results](docs/TEST_RESULTS.md) before entrusting real credentials.
-This is not an independently audited release.
+runtime verification are automated, and the real GTK acceptance run passed on
+2026-10-10 (Xvfb, GTK 4.22.4). Read [the exact test results](docs/TEST_RESULTS.md)
+before entrusting real credentials. This is not an independently audited release.
 
 ## Features
 
