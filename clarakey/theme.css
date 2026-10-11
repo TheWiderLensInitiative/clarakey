@@ -1,3 +1,4 @@
+/* Accent: the blue of the ClaraKey logo (#5dc2fe), with dark text on blue for contrast (8:1). */
 window { background: #0c121a; color: #e9eef4; }
 * { font-family: 'DejaVu Sans', sans-serif; font-size: 14px; }
 .sidebar { background: #111b26; border-right: 1px solid #263342; padding: 24px 16px; }
@@ -6,32 +7,32 @@ window { background: #0c121a; color: #e9eef4; }
 .heading { font-size: 25px; font-weight: 700; }
 .subheading { font-size: 18px; font-weight: 700; }
 .muted { color: #97a8bb; font-size: 13px; }
-.eyebrow { color: #90e4ca; font-size: 11px; font-weight: 700; letter-spacing: 2px; }
-.good { color: #90e4ca; }
+.eyebrow { color: #5dc2fe; font-size: 11px; font-weight: 700; letter-spacing: 2px; }
+.good { color: #5dc2fe; }
 .warning { color: #f0c483; }
 .error { color: #ffabab; }
 .card { background: #142130; border: 1px solid #2a3b4f; border-radius: 16px; padding: 20px; }
 .login-card { background: #142130; border: 1px solid #2a3b4f; border-radius: 22px; padding: 36px; }
 .sidebar button { background: transparent; border: none; border-radius: 10px; padding: 13px 15px; color: #b9c7d6; }
 .sidebar button:hover { background: #203143; }
-.sidebar button.active { background: #233d3d; color: #a5f1d9; font-weight: 700; }
+.sidebar button.active { background: #16324d; color: #8fd3ff; font-weight: 700; }
 button { background: #223246; color: #e9eef4; border: 1px solid #344a60; border-radius: 9px; padding: 10px 16px; box-shadow: none; }
 button:hover { background: #2e435b; }
-button.primary { background: #96e7cc; color: #102a27; border-color: #96e7cc; font-weight: 700; }
-button.primary:hover { background: #b6f2df; }
+button.primary { background: #5dc2fe; color: #062236; border-color: #5dc2fe; font-weight: 700; }
+button.primary:hover { background: #8ad4ff; }
 button.danger { background: #492934; color: #ffc1c1; border-color: #70414d; }
 button.flat { background: transparent; border-color: transparent; }
-entry, passwordentry, textview { background: #0e1823; color: #e9eef4; border: 1px solid #344a60; border-radius: 8px; padding: 10px; caret-color: #96e7cc; }
+entry, passwordentry, textview { background: #0e1823; color: #e9eef4; border: 1px solid #344a60; border-radius: 8px; padding: 10px; caret-color: #5dc2fe; }
 passwordentry entry { border: none; background: transparent; padding: 0; }
 textview text { background: #0e1823; color: #e9eef4; }
-entry:focus, passwordentry:focus-within, textview:focus { border-color: #96e7cc; }
-.code { font-family: 'DejaVu Sans Mono', monospace; font-size: 32px; font-weight: 700; letter-spacing: 4px; color: #e7fff7; }
+entry:focus, passwordentry:focus-within, textview:focus { border-color: #5dc2fe; }
+.code { font-family: 'DejaVu Sans Mono', monospace; font-size: 32px; font-weight: 700; letter-spacing: 4px; color: #eaf6ff; }
 .secret { font-family: 'DejaVu Sans Mono', monospace; font-size: 15px; }
 progressbar trough { background: #263647; min-height: 5px; border-radius: 5px; }
-progressbar progress { background: #96e7cc; min-height: 5px; border-radius: 5px; }
+progressbar progress { background: #5dc2fe; min-height: 5px; border-radius: 5px; }
 .status { background: #111b26; border-top: 1px solid #263342; padding: 10px 24px; color: #b1c2d1; font-size: 12px; }
 separator { background: #2a3b4f; min-height: 1px; }
 scrolledwindow { border: none; }
 checkbutton { padding: 5px 0; }
 dropdown button { padding: 9px 12px; }
-.selection { background: #233d3d; }
+.selection { background: #16324d; }
