@@ -5,7 +5,7 @@ import secrets
 import time
 from .crypto import decrypt_with_key, derive_key, encrypt, unlock, wipe, encode_json, discard
 from .errors import AuthenticationError, ValidationError, InvalidVault
-from .model import fresh_vault, validate_vault, validate_entry
+from .model import fresh_vault, validate_vault, validate_entry, payload_schema, file_bytes
 from .storage import export_plaintext
 
 
@@ -52,6 +52,7 @@ class Session:
 
     def commit(self, candidate):
         self.require_active()
+        candidate['schema'] = payload_schema(candidate)
         validate_vault(candidate)
         blob = encrypt(candidate, self.key, self.salt)
         self.store.save(blob, lambda b: validate_vault(decrypt_with_key(b, self.key)))
@@ -132,7 +133,12 @@ class Session:
 
     def export(self, entry_id, path, *, confirmed=False):
         e = self.entry(entry_id)
-        data = bytearray(e['fields']['private_key'].encode()) if e['kind'] == 'ssh' else encode_json(e)
+        if e['kind'] == 'file':
+            data = file_bytes(e)   # the original bytes, exactly as added
+        elif e['kind'] == 'ssh':
+            data = bytearray(e['fields']['private_key'].encode())
+        else:
+            data = encode_json(e)
         try:
             export_plaintext(path, data, confirmed=confirmed)
         finally:

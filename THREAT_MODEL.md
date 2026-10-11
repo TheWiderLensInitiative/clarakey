@@ -92,6 +92,11 @@ material. OS-level process inspection, crash facilities outside our control and
 third-party diagnostic tools are host concerns. Test directories contain only
 synthetic credentials, and test processes remove them normally.
 
+File entries are encrypted with the rest of the payload, including their names. Saving a
+file out of the vault is a plaintext export with the same rules below; the saved bytes
+are exactly the stored bytes, whose SHA-256 is verified at every unlock. Opening, running
+or previewing stored files is not part of ClaraKey.
+
 Plaintext exports are deliberately outside vault protection. They require explicit
 confirmation, use restrictive permissions and refuse existing filenames. Failed
 exports may leave a partial plaintext file; the error warns about this. The

@@ -30,7 +30,9 @@ and reject nonregular files, symbolic links and hardlinked sensitive files.
 
 ## Authenticated payload
 
-UTF-8 JSON contains exactly `schema: 1`, `entries` and `settings`. JSON duplicate
+UTF-8 JSON contains exactly `schema`, `entries` and `settings`. `schema` is `1`, or `2`
+when (and only when) the vault contains at least one `file` entry; a `file` entry in a
+schema-1 payload is rejected. JSON duplicate
 keys, NaN/Infinity, malformed UTF-8 and nesting over 16 levels are rejected. No
 pickle, YAML objects, executable data, compressed payload or arbitrary type
 instantiation is used. The payload has at most 5000 entries and each text field is
@@ -45,6 +47,11 @@ and `fields`. Timestamps are UTC Unix seconds. Kinds and their exact field sets:
 * `ssh`: host, username, private_key, public_key, notes.
 * `password`: service, username, password, website, notes.
 * `note`: note.
+* `file` (schema 2): filename, size, sha256, data, notes. `filename` is a plain name of
+  at most 255 UTF-8 bytes without `/`, `\`, control characters, `.` or `..`. `size` is
+  an integer from 1 to 1,048,576. `data` is standard padded base64 of exactly `size`
+  bytes, and `sha256` is the lowercase hex SHA-256 of those bytes; both are verified on
+  every load. The sizes of all file entries total at most 5,242,880 bytes.
 
 Settings contain `auto_lock` (60, 300, 600, 1800 or 0 seconds) and `clipboard`
 (15, 30, 60 or 0 seconds); zero disables the corresponding idle timer. Explicit
@@ -77,7 +84,10 @@ power-loss durability despite OS-level flushes; keep another encrypted backup.
 
 ## Migration
 
-Version 1 has no legacy formats to migrate. Future incompatible envelopes require
+The binary envelope is still version 1. ClaraKey 1.1 reads payload schema 1 and 2 and
+writes schema 2 only while the vault holds a file entry, so a vault without files stays
+readable by 1.0.x. ClaraKey 1.0.x rejects schema 2 as unsupported and does not modify the
+file. Version 1 of the envelope has no legacy formats to migrate. Future incompatible envelopes require
 a distinct version and a separately bounded parser. Authenticate and validate the
 old format first, then migrate in memory and use the same safe replacement
 protocol. Never reinterpret unknown versions as v1. Backups have the identical

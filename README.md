@@ -5,7 +5,7 @@ accounts, recovery codes, API tokens, SSH private keys, passwords and private no
 on an ordinary USB drive. No cloud, account, telemetry, analytics, subscription or
 network service is part of ClaraKey. Normal operation is offline.
 
-**Release status:** V1 development build, patched to 1.0.1. See
+**Release status:** 1.1.0 adds encrypted file storage (see [Files](#files)). 1.0.1 was
 [the desktop input fix](docs/DESKTOP_FIX_1.0.1.md). Backend tests and portable
 runtime verification are automated, and the real GTK acceptance run passed on
 2026-10-10 (Xvfb, GTK 4.22.4). Read [the exact test results](docs/TEST_RESULTS.md)
@@ -19,6 +19,9 @@ before entrusting real credentials. This is not an independently audited release
 * Recovery code editing, deletion, copy/reveal and used markers.
 * API credentials; imported SSH private keys with explicit export; passwords with
   secure configurable generator; secure notes with created/modified timestamps.
+* Encrypted files up to 1 MiB each (5 MiB per vault): signing keystores, certificates,
+  GPG keys, wallet and 2FA backup files, with a SHA-256 fingerprint checked on every
+  unlock and confirmed, no-overwrite saving back out.
 * Masked secret details, clipboard ownership-aware timeouts and inactivity lock.
 * Authenticated encryption of all entries, metadata and settings.
 * Verified atomic encrypted saves, previous-revision recovery, encrypted backups
@@ -28,6 +31,19 @@ ClaraKey is a software vault. It is not FIDO2/WebAuthn hardware, a TPM, secure
 element, YubiKey replacement or protection from a compromised computer. QR image
 import, browser integration, synchronization and non-Linux platforms are not part
 of this release.
+
+## Files
+
+Choose **Files → Add entry**, pick the file and optionally add a title and notes. The
+file's bytes, name and notes are encrypted inside the vault like every other entry;
+the original stays where it was. **Save file…** writes an exact unencrypted copy after
+a confirmation, with owner-only permissions, and never overwrites an existing file.
+
+Each file is limited to 1 MiB and all files in a vault to 5 MiB, because the whole
+vault is one encrypted payload of at most 8 MiB that is rewritten on every save. That
+holds many keystores and certificates; keep large documents in an encrypted archive.
+A vault becomes payload schema 2 when it holds a file. ClaraKey 1.0.x refuses such a
+vault without changing it; vaults without files keep schema 1 and still open in 1.0.x.
 
 ## Quick start: portable release
 

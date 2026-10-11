@@ -22,6 +22,7 @@ from cryptography.hazmat.primitives.twofactor.totp import TOTP
 
 PASSWORD = 'gui-test-only long master passphrase'
 SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'
+FILE_BYTES = b'\x00\xfe\xed\xfe\xedGUI-FILE-MARKER' + bytes(range(256)) * 16
 callback_errors = []
 
 
@@ -96,7 +97,24 @@ def stage(root,number):
             from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, NoEncryption
             key=ed25519.Ed25519PrivateKey.generate().private_bytes(Encoding.PEM,PrivateFormat.OpenSSH,NoEncryption()).decode()
             add(app,'ssh','GUI SSH',dict(host='example.invalid',username='test',private_key=key,public_key='',notes=''))
-            assert len(app.session.data['entries'])==6
+            # a binary file, like a signing keystore, added through the real editor and saved back out
+            source=root/'gui-test-only-keystore.jks'
+            source.write_bytes(FILE_BYTES)
+            add(app,'file','',dict(path=str(source),notes='GUI-test-only file notes'))
+            source.unlink()
+            stored=next(e for e in app.session.data['entries'] if e['kind']=='file')
+            assert stored['title']=='gui-test-only-keystore.jks' and stored['fields']['size']==len(FILE_BYTES)
+            detail_file=app.open_detail(stored['id']); pump()
+            assert 'GUI-test-only file notes' not in ' '.join(text_in_tree(detail_file))
+            export=app.export_dialog(stored['id']); pump()
+            target=root/'gui-test-only-restored.jks'
+            export.export_path.set_text(str(target))
+            export.export_confirm.set_active(True)
+            export.export_commit(); pump()
+            assert target.read_bytes()==FILE_BYTES and (target.stat().st_mode & 0o777)==0o600
+            target.unlink()
+            app.close_dialog(detail_file); pump()
+            assert len(app.session.data['entries'])==7
             entry=next(e for e in app.session.data['entries'] if e['kind']=='password')
             detail=app.open_detail(entry['id'])
             app.copy_field(entry['id'],'password'); pump()
@@ -108,7 +126,7 @@ def stage(root,number):
             assert 'GUI-test-only' not in all_text
             assert 'GUI-test-only' not in ' '.join(text_in_tree(detail))
             app.master.set_text(PASSWORD); app.unlock_button.emit('clicked'); pump()
-            assert len(app.session.data['entries'])==6
+            assert len(app.session.data['entries'])==7
             backup=app.session.backup()
             restore=app.restore_dialog()
             restore.restore_path.set_text(str(backup))
@@ -117,11 +135,14 @@ def stage(root,number):
             assert restore.restore_confirm.get_sensitive()
             restore.restore_confirm.set_active(True)
             restore.restore_commit(); pump()
-            assert len(app.session.data['entries'])==6
+            assert len(app.session.data['entries'])==7
             app.idle.last_activity=app.idle.clock()-301
             app.tick(); assert app.session is None
         else:
-            assert len(app.session.data['entries'])==6
+            assert len(app.session.data['entries'])==7
+            stored=next(e for e in app.session.data['entries'] if e['kind']=='file')
+            from clarakey.model import file_bytes
+            assert bytes(file_bytes(stored))==FILE_BYTES
     app.close_requested(); app.window.destroy(); app.shutdown_app(); pump()
 
 
@@ -138,6 +159,6 @@ if __name__=='__main__':
             if number=='edit':
                 for path in Path(directory).rglob('*.vault'):
                     data=path.read_bytes()
-                    for marker in (PASSWORD.encode(),SECRET.encode(),b'GUI-test-only',b'test-only-code'):
+                    for marker in (PASSWORD.encode(),SECRET.encode(),b'GUI-test-only',b'test-only-code',b'GUI-FILE-MARKER'):
                         assert marker not in data
-    print('PASS: real GTK create/restart/wrong-password/TOTP/all-six-types/lock/backup/restore/restart acceptance.')
+    print('PASS: real GTK create/restart/wrong-password/TOTP/all-seven-types/file-add-and-save/lock/backup/restore/restart acceptance.')

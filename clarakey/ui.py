@@ -16,8 +16,8 @@ from . import __version__
 from .activity import attach_activity_controllers
 from .crypto import wipe, discard
 from .errors import ClaraKeyError, ValidationError, StorageError
-from .model import (KINDS, NAMES, AUTO_LOCK, CLIPBOARD, generate_password, new_entry,
-                    password_strength, search_entries)
+from .model import (KINDS, NAMES, AUTO_LOCK, CLIPBOARD, MAX_FILE_BYTES, generate_password, new_entry,
+                    password_strength, search_entries, file_fields)
 from .policy import IdleLock, UnlockThrottle, ClipboardGuard
 from .session import Session
 from .storage import PortableStore, read_external
@@ -45,6 +45,10 @@ def button(text, callback, css=None):
         widget.add_css_class(css)
     widget.connect('clicked', lambda _b: callback())
     return widget
+
+
+def human_size(n):
+    return f'{n} bytes' if n < 1024 else (f'{n / 1024:.1f} KB' if n < 1024 * 1024 else f'{n / 1048576:.2f} MB')
 
 
 def margins(widget, value=24):
@@ -383,7 +387,9 @@ class ClaraKeyApp(Gtk.Application):
                 card.append(progress); card.append(countdown)
                 self.cards.append((entry_id, code_widget, progress, countdown))
             else:
-                info = f"{len(f['codes'])} recovery codes · {sum(c['used'] for c in f['codes'])} used" if kind == 'recovery' else 'Encrypted · reveal or copy inside'
+                info = (f"{len(f['codes'])} recovery codes · {sum(c['used'] for c in f['codes'])} used" if kind == 'recovery'
+                        else f"{f['filename']} · {human_size(f['size'])} · encrypted" if kind == 'file'
+                        else 'Encrypted · reveal or copy inside')
                 card.append(label(info, 'muted'))
             self.content.append(card)
         self.tick()
@@ -462,7 +468,8 @@ class ClaraKeyApp(Gtk.Application):
         content.append(label(('Edit ' if e else 'Add ')+NAMES[kind], 'heading'))
         content.append(label('Saved only inside your encrypted portable vault.', 'muted'))
         fields = {}
-        title = self.field(content, 'Title / service', e['title'] if e else '')
+        title = self.field(content, 'Title (optional: the file name is used if blank)' if kind == 'file' else 'Title / service',
+                           e['title'] if e else '')
         values = e['fields'] if e else {}
         uri = None
         if kind == 'totp':
@@ -472,6 +479,16 @@ class ClaraKeyApp(Gtk.Application):
                 fields[key] = self.field(content, name, values.get(key,''), secret=key=='secret')
             for key, name, default in [('algorithm','Algorithm: SHA1, SHA256 or SHA512','SHA1'),('digits','Digits: 6, 7 or 8',6),('period','Period in seconds: 15–300',30)]:
                 fields[key] = self.field(content, name, values.get(key,default))
+        elif kind == 'file':
+            if values:
+                content.append(label(f"Stored file: {values['filename']} ({human_size(values['size'])}). "
+                                     'Choose a new file only to replace it.', 'muted', True))
+            else:
+                content.append(label('Any file up to 1 MB: a signing keystore, certificate, GPG key, wallet or '
+                                     '2FA backup. The original stays where it is.', 'muted', True))
+            fields['path'] = self.field(content, 'File to store' if not values else 'Replacement file (optional)')
+            content.append(button('Browse files', lambda: self.file_picker(fields['path'], Path.home())))
+            fields['notes'] = self.field(content, 'Notes', values.get('notes', ''), multiline=True)
         elif kind == 'recovery':
             content.append(label('One code per line. Prefix a used code with [used] .', 'muted'))
             codes = '\n'.join(('[used] ' if c['used'] else '')+c['value'] for c in values.get('codes',[]))
@@ -509,6 +526,21 @@ class ClaraKeyApp(Gtk.Application):
                 elif kind == 'recovery':
                     f = {'codes':[{'value':line.removeprefix('[used] ').strip(), 'used':line.startswith('[used] ')}
                                   for line in f['codes'].splitlines() if line.strip()]}
+                elif kind == 'file':
+                    source = f['path'].strip()
+                    if source:
+                        path = Path(source).expanduser()
+                        raw = bytearray(read_external(path, MAX_FILE_BYTES))
+                        try:
+                            f = file_fields(path.name, raw, f['notes'])
+                        finally:
+                            wipe(raw)
+                    elif values:
+                        f = dict(values, notes=f['notes'])
+                    else:
+                        raise ValidationError('Choose the file to store.')
+                    if not title.get_text().strip():
+                        title.set_text(f['filename'])
                 entry = new_entry(kind, title.get_text() or f.get('service',''), f)
                 if entry_id:
                     original = self.session.entry(entry_id)
@@ -554,6 +586,18 @@ class ClaraKeyApp(Gtk.Application):
                             self.render_entries()
                 used.connect('toggled', toggle)
                 line.append(used); content.append(line)
+        elif e['kind'] == 'file':
+            f = e['fields']
+            for name, value in (('File name', f['filename']), ('Size', human_size(f['size'])),
+                                ('SHA-256 fingerprint', f['sha256'])):
+                content.append(label(name, 'muted'))
+                content.append(label(value, None, True))
+            content.append(label('The file itself stays encrypted. Use “Save file…” to write a copy outside the vault.', 'muted', True))
+            if f['notes']:
+                content.append(label('Notes', 'muted'))
+                masked = label('•••• •••• ••••', 'secret', True)
+                content.append(masked)
+                content.append(button('Reveal', lambda target=masked:self.reveal(entry_id,'notes',target)))
         else:
             secrets_by_kind = {'totp':{'secret'},'api':{'api_key','notes'},'ssh':{'private_key','notes'},
                                'password':{'password','notes'},'note':{'note'}}
@@ -576,7 +620,7 @@ class ClaraKeyApp(Gtk.Application):
         actions = box(False)
         kind = e['kind']
         actions.append(button('Edit', lambda:(self.close_dialog(window),self.open_editor(kind,entry_id))))
-        actions.append(button('Export…', lambda:self.export_dialog(entry_id)))
+        actions.append(button('Save file…' if kind == 'file' else 'Export…', lambda:self.export_dialog(entry_id)))
         actions.append(button('Delete', lambda:self.confirm_delete(entry_id,window), 'danger'))
         content.append(actions)
         content.append(button('Close', lambda:self.close_dialog(window)))
@@ -690,10 +734,15 @@ class ClaraKeyApp(Gtk.Application):
         window.present()
 
     def export_dialog(self, entry_id):
-        window, content = self.dialog('Export plaintext secret', 600)
-        content.append(label('This export will be unencrypted', 'heading'))
+        e = self.session.entry(entry_id) if self.session else None
+        is_file = bool(e) and e['kind'] == 'file'
+        window, content = self.dialog('Save file outside the vault' if is_file else 'Export plaintext secret', 600)
+        content.append(label('This copy will be unencrypted', 'heading'))
         content.append(label('The exported file will no longer have ClaraKey’s vault encryption protection. Anyone with access to that file may read or use the secret. Deleting files from a USB drive may not securely erase them.', 'warning', True))
-        path=self.field(content,'New destination file path')
+        if is_file:
+            content.append(label('ClaraKey never overwrites an existing file; choose a new name if this one is taken.', 'muted', True))
+        suggestion = str(Path.home() / e['fields']['filename']) if is_file else ''
+        path=self.field(content,'New destination file path', suggestion)
         confirm=Gtk.CheckButton(label='I understand that this file will contain plaintext secrets.')
         content.append(confirm)
         error=label('', 'error', True); content.append(error)
@@ -708,9 +757,11 @@ class ClaraKeyApp(Gtk.Application):
                 self.status('Plaintext export created at your chosen location. Protect this file.')
             except ClaraKeyError as exc:
                 error.set_text(str(exc))
-        content.append(button('Export plaintext',export,'danger'))
+        content.append(button('Save unencrypted copy' if is_file else 'Export plaintext',export,'danger'))
         content.append(button('Cancel',lambda:self.close_dialog(window)))
+        window.export_path, window.export_confirm, window.export_commit = path, confirm, export
         window.present()
+        return window
 
     def show_settings(self):
         if not self.session:

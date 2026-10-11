@@ -1,5 +1,21 @@
 # ClaraKey verification results — 2026-10-03
 
+**1.1.0, 2026-10-10 (file entries):** `./test.sh` on Ubuntu 26.04.1 (Python 3.14.4, GTK 4.22.4, Xvfb):
+
+* **PASS: 65 automated tests**, including 12 for files: exact binary round trip after reopen;
+  file bytes, name and notes absent from every file on disk; schema 2 only while files exist;
+  file in a schema-1 payload and unknown schemas rejected; confirmed, private (0600),
+  no-overwrite saving out; 1 MiB per-file and 5 MiB total caps (a refused save changes
+  nothing); unsafe filenames; eight kinds of damaged file data; backup/restore; search by
+  name but never contents; bounded, symlink-refusing import.
+* **PASS: process acceptance** and **real GTK acceptance**, now seven entry types including a
+  file added through the editor and saved back out byte-identical with mode 0600.
+* **PASS: compatibility with the released 1.0.1 code:** a 1.1.0 vault without files opens in
+  1.0.1; a vault with files is refused ("Unsupported vault payload schema") and left
+  byte-identical on disk.
+* **PASS: portable bundle:** `./build.sh` self-check plus a file round trip inside the bundled
+  runtime; the archive contains no vault files.
+
 **Update 2026-10-10:** the real GTK acceptance run now passes. `./test.sh` on Ubuntu 26.04.1
 (Python 3.14.4, GTK 4.22.4, Xvfb with `GDK_BACKEND=x11 GSK_RENDERER=cairo`) ran:
 

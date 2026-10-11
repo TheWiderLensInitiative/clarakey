@@ -1,4 +1,7 @@
 """Bounded schemas; JSON only, no executable object deserialization."""
+import base64
+import binascii
+import hashlib
 import secrets
 import string
 import time
@@ -6,9 +9,9 @@ import uuid
 from .errors import ValidationError
 from .totp import validate_totp, normalize_secret
 
-KINDS = ('totp', 'recovery', 'api', 'ssh', 'password', 'note')
+KINDS = ('totp', 'recovery', 'api', 'ssh', 'password', 'note', 'file')
 NAMES = {'totp': 'Authenticator', 'recovery': 'Recovery codes', 'api': 'API keys',
-         'ssh': 'SSH keys', 'password': 'Passwords', 'note': 'Secure notes'}
+         'ssh': 'SSH keys', 'password': 'Passwords', 'note': 'Secure notes', 'file': 'Files'}
 FIELDS = {
     'totp': {'service', 'account', 'secret', 'algorithm', 'digits', 'period'},
     'recovery': {'codes'},
@@ -16,8 +19,12 @@ FIELDS = {
     'ssh': {'host', 'username', 'private_key', 'public_key', 'notes'},
     'password': {'service', 'username', 'password', 'website', 'notes'},
     'note': {'note'},
+    'file': {'filename', 'size', 'sha256', 'data', 'notes'},
 }
 REQUIRED = {'api': 'api_key', 'ssh': 'private_key', 'password': 'password', 'note': 'note'}
+# Files live inside the single encrypted payload (at most 8 MiB, base64 adds a third), so they are capped.
+MAX_FILE_BYTES = 1024 * 1024
+MAX_TOTAL_FILE_BYTES = 5 * 1024 * 1024
 AUTO_LOCK = (60, 300, 600, 1800, 0)
 CLIPBOARD = (15, 30, 60, 0)
 
@@ -33,6 +40,49 @@ def _text(value, limit=65536):
         value.encode('utf-8')
     except UnicodeError:
         raise ValidationError('Invalid text encoding.') from None
+
+
+def safe_filename(name):
+    """A plain file name to suggest on export: no folders, no control characters, no hidden-file tricks."""
+    _text(name, 255)
+    if (not name.strip() or name in ('.', '..') or '/' in name or '\\' in name
+            or any(ord(c) < 32 or ord(c) == 127 for c in name)):
+        raise ValidationError('Use a plain file name without folders or control characters.')
+    return name
+
+
+def file_fields(filename, raw, notes=''):
+    """Fields for a file entry from its bytes. The SHA-256 lets every load prove the bytes are intact."""
+    if not isinstance(raw, (bytes, bytearray)) or not 1 <= len(raw) <= MAX_FILE_BYTES:
+        raise ValidationError('Files must be between 1 byte and 1 MiB.')
+    return {'filename': safe_filename(filename), 'size': len(raw), 'sha256': hashlib.sha256(raw).hexdigest(),
+            'data': base64.b64encode(bytes(raw)).decode('ascii'), 'notes': notes}
+
+
+def file_bytes(entry):
+    return bytearray(base64.b64decode(entry['fields']['data'], validate=True))
+
+
+def _validate_file(f):
+    safe_filename(f['filename'])
+    _text(f['notes'])
+    if type(f['size']) is not int or not 1 <= f['size'] <= MAX_FILE_BYTES:
+        raise ValidationError('Files must be between 1 byte and 1 MiB.')
+    if not isinstance(f['data'], str) or len(f['data']) != 4 * ((f['size'] + 2) // 3):
+        raise ValidationError('Stored file data is damaged.')
+    if not isinstance(f['sha256'], str) or len(f['sha256']) != 64 or any(c not in '0123456789abcdef' for c in f['sha256']):
+        raise ValidationError('Stored file fingerprint is invalid.')
+    try:
+        raw = base64.b64decode(f['data'], validate=True)
+    except (binascii.Error, ValueError):
+        raise ValidationError('Stored file data is damaged.') from None
+    if len(raw) != f['size'] or hashlib.sha256(raw).hexdigest() != f['sha256']:
+        raise ValidationError('Stored file data does not match its fingerprint.')
+
+
+def payload_schema(data):
+    """Schema 2 only once the vault holds a file, so vaults without files still open in ClaraKey 1.0."""
+    return 2 if any(e.get('kind') == 'file' for e in data.get('entries', [])) else 1
 
 
 def validate_entry(entry):
@@ -53,7 +103,9 @@ def validate_entry(entry):
     f = entry['fields']
     if not isinstance(f, dict) or set(f) != FIELDS[entry['kind']]:
         raise ValidationError('Invalid credential fields.')
-    if entry['kind'] == 'recovery':
+    if entry['kind'] == 'file':
+        _validate_file(f)
+    elif entry['kind'] == 'recovery':
         if not isinstance(f['codes'], list) or not 1 <= len(f['codes']) <= 1000:
             raise ValidationError('Enter 1–1000 recovery codes.')
         for c in f['codes']:
@@ -75,7 +127,7 @@ def validate_entry(entry):
 
 
 def validate_vault(data):
-    if not isinstance(data, dict) or set(data) != {'schema', 'entries', 'settings'} or type(data['schema']) is not int or data['schema'] != 1:
+    if not isinstance(data, dict) or set(data) != {'schema', 'entries', 'settings'} or type(data['schema']) is not int or data['schema'] not in (1, 2):
         raise ValidationError('Unsupported vault payload schema.')
     settings = data['settings']
     if not isinstance(settings, dict) or set(settings) != {'auto_lock', 'clipboard'}:
@@ -90,6 +142,11 @@ def validate_vault(data):
         if entry['id'] in ids:
             raise ValidationError('Duplicate entry identifier.')
         ids.add(entry['id'])
+    files = [e for e in data['entries'] if e['kind'] == 'file']
+    if files and data['schema'] != 2:
+        raise ValidationError('Files need vault schema 2.')
+    if sum(e['fields']['size'] for e in files) > MAX_TOTAL_FILE_BYTES:
+        raise ValidationError('Files in one vault are limited to 5 MiB in total.')
     return data
 
 
@@ -108,7 +165,7 @@ def search_entries(entries, query='', kind=None):
         # Only explicit metadata; never search notes, passwords, codes or key material.
         f = e['fields']
         haystack = ' '.join([e['title']] + [str(f.get(k, '')) for k in
-                            ('service', 'account', 'username', 'host', 'key_name', 'website')]).casefold()
+                            ('service', 'account', 'username', 'host', 'key_name', 'website', 'filename')]).casefold()
         if all(t in haystack for t in terms):
             result.append(e)
     return sorted(result, key=lambda e: (e['title'].casefold(), e['id']))
