@@ -114,6 +114,21 @@ def stage(root,number):
             assert target.read_bytes()==FILE_BYTES and (target.stat().st_mode & 0o777)==0o600
             target.unlink()
             app.close_dialog(detail_file); pump()
+            # drag and drop: the same handler a file-manager drop calls; two same-named files get their folder in the title
+            for folder in ('drop-one','drop-two'):
+                (root/folder).mkdir(); (root/folder/'keystore.properties').write_bytes(b'storePassword=GUI-test-only-'+folder.encode())
+            (root/'drop-folder').mkdir()
+            message=app.add_files([root/'drop-one'/'keystore.properties', root/'drop-two'/'keystore.properties', root/'drop-folder'])
+            pump()
+            assert message.startswith('Added 2 files') and 'drop-folder is a folder' in message, message
+            titles={e['title'] for e in app.session.data['entries'] if e['kind']=='file'}
+            assert {'keystore.properties (drop-one)','keystore.properties (drop-two)'} <= titles, titles
+            assert app.category=='file'
+            for e in [e for e in app.session.data['entries'] if e['title'].startswith('keystore.properties')]:
+                app.session.delete(e['id'])
+            picker=app.file_picker(Gtk.Entry(), root); pump()
+            assert picker.picker_path.get_text()==str(root)
+            app.close_dialog(picker); pump()
             assert len(app.session.data['entries'])==7
             entry=next(e for e in app.session.data['entries'] if e['kind']=='password')
             detail=app.open_detail(entry['id'])

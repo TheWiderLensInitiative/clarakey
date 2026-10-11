@@ -60,7 +60,7 @@ def button(text, callback, css=None):
 
 
 def human_size(n):
-    return f'{n} bytes' if n < 1024 else (f'{n / 1024:.1f} KB' if n < 1024 * 1024 else f'{n / 1048576:.2f} MB')
+    return (f'{n} byte' if n == 1 else f'{n} bytes') if n < 1024 else (f'{n / 1024:.1f} KB' if n < 1024 * 1024 else f'{n / 1048576:.2f} MB')
 
 
 def margins(widget, value=24):
@@ -144,6 +144,10 @@ class ClaraKeyApp(Gtk.Application):
         self.watch_activity(self.window)
         self.clipboard_guard = ClipboardGuard(GtkClipboard(self.window.get_clipboard()))
         self.window.get_clipboard().connect('changed', self.clipboard_changed)
+        # Drag files from the file manager onto the unlocked window to store them.
+        drop = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
+        drop.connect('drop', self.files_dropped)
+        self.window.add_controller(drop)
         try:
             self.store = PortableStore(self.root)
             self.show_login()
@@ -155,6 +159,45 @@ class ClaraKeyApp(Gtk.Application):
             self.window.set_child(content)
         self.timer = GLib.timeout_add(250, self.tick)
         self.window.present()
+
+    def files_dropped(self, _target, value, _x, _y):
+        paths = [f.get_path() for f in value.get_files() if f.get_path()]
+        if not self.session:
+            self.status('Unlock the vault first, then drop the files again.')
+            return False
+        self.status(self.add_files(paths))
+        return True
+
+    def add_files(self, paths):
+        """Store local files as file entries in one encrypted save. Returns a short summary for the status bar.
+        Titles are the file names; a name used twice (two keystore.properties) gets its folder added."""
+        paths = [Path(p) for p in paths][:50]
+        names = [p.name for p in paths]
+        stored = {e['fields']['filename'] for e in self.session.data['entries'] if e['kind'] == 'file'}
+        entries, problems = [], []
+        for path in paths:
+            if path.is_dir():
+                problems.append(f'{path.name} is a folder')
+                continue
+            try:
+                raw = bytearray(read_external(path, MAX_FILE_BYTES))
+                try:
+                    fields = file_fields(path.name, raw)
+                finally:
+                    wipe(raw)
+                title = path.name if names.count(path.name) == 1 and path.name not in stored \
+                    else f'{path.name} ({path.parent.name or path.parent})'
+                entries.append(new_entry('file', title, fields))
+            except ClaraKeyError as exc:
+                problems.append(f'{path.name}: {exc}')
+        if entries:
+            try:
+                self.session.put_many(entries)
+            except ClaraKeyError as exc:
+                return f'Nothing was added: {exc}'
+            self.navigate('file')
+        added = f"Added {len(entries)} file{'s' if len(entries) != 1 else ''}, encrypted on your drive." if entries else 'No files were added.'
+        return added + (' Skipped: ' + '; '.join(problems) if problems else '')
 
     def watch_activity(self, window):
         # Resolve the current IdleLock on every event; lock() replaces the policy.
@@ -376,6 +419,12 @@ class ClaraKeyApp(Gtk.Application):
         for key, nav in self.nav.items():
             (nav.add_css_class if key == self.category else nav.remove_css_class)('active')
         entries = search_entries(self.session.data['entries'], self.query, self.category)
+        if self.category == 'file':
+            hint = box(spacing=4, css='card')
+            hint.append(label('Drag files here', 'subheading'))
+            hint.append(label('Drop one or more files from your file manager anywhere on this window. Each is stored '
+                              'encrypted (up to 1 MB each); the originals stay where they are.', 'muted', True))
+            self.content.append(hint)
         if not entries:
             card = box(spacing=16, css='card')
             card.append(label('A quiet place for your important keys.', 'subheading'))
@@ -720,8 +769,17 @@ class ClaraKeyApp(Gtk.Application):
             except (OSError, ClaraKeyError):
                 error.set_text('Cannot list this directory. Check the path and permissions.')
         content.prepend(button('Open directory',list_path))
+        # One-click places; hidden folders (like ~/.ssh) are listed too.
+        places = box(False, 6)
+        for name, place in (('Home', Path.home()), ('Desktop', Path.home()/'Desktop'), ('Downloads', Path.home()/'Downloads'),
+                            ('Documents', Path.home()/'Documents'), ('This drive', self.root)):
+            if place.is_dir():
+                places.append(button(name, lambda place=place:(path_field.set_text(str(place)), list_path())))
+        content.prepend(places)
         path_field.connect('activate',lambda _:list_path())
+        window.picker_path, window.picker_list = path_field, list_path
         list_path(); window.present()
+        return window
 
     def import_key_dialog(self, target):
         window, content = self.dialog('Import SSH private key', 560)

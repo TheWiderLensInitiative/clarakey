@@ -176,6 +176,20 @@ class FileTests(unittest.TestCase):
         with self.assertRaises(StorageError):
             read_external(link, MAX_FILE_BYTES)
 
+    def test_put_many_is_one_all_or_nothing_save(self):
+        a, b = file_entry(name='a.jks'), file_entry(name='b.jks')
+        self.session.put_many([a, b])
+        self.assertEqual({e['fields']['filename'] for e in self.session.data['entries']}, {'a.jks', 'b.jks'})
+        before = deepcopy(self.session.data)
+        bad = deepcopy(file_entry(name='c.jks'))
+        bad['fields']['sha256'] = '0' * 64
+        with self.assertRaises(ValidationError):
+            self.session.put_many([file_entry(name='d.jks'), bad])
+        self.assertEqual(self.session.data, before)
+        self.session.close()
+        self.session = Session.open(self.store, PASSWORD)
+        self.assertEqual(len(self.session.data['entries']), 2)
+
     def test_payload_schema_helper(self):
         self.assertEqual(payload_schema({'entries': []}), 1)
         self.assertEqual(payload_schema({'entries': [file_entry()]}), 2)

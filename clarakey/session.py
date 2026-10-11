@@ -66,6 +66,16 @@ class Session:
         candidate['entries'].append(deepcopy(entry))
         self.commit(candidate)
 
+    def put_many(self, entries):
+        """Add or replace several entries in one verified, encrypted save (all or nothing)."""
+        self.require_active()
+        for entry in entries:
+            validate_entry(entry)
+        ids = {e['id'] for e in entries}
+        candidate = deepcopy(self.data)
+        candidate['entries'] = [e for e in candidate['entries'] if e['id'] not in ids] + deepcopy(list(entries))
+        self.commit(candidate)
+
     def delete(self, entry_id):
         self.entry(entry_id)
         candidate = deepcopy(self.data)

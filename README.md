@@ -7,7 +7,8 @@ accounts, recovery codes, API tokens, SSH private keys, passwords and private no
 on an ordinary USB drive. No cloud, account, telemetry, analytics, subscription or
 network service is part of ClaraKey. Normal operation is offline.
 
-**Release status:** 1.2.0 adds the new logo and a one-click PC icon (see
+**Release status:** 1.3.0 adds drag-and-drop for files (see [Files](#files)). 1.2.0 added the new logo
+and a one-click PC icon (see
 [Open it with one click](#open-it-with-one-click)). 1.1.0 added encrypted file storage (see [Files](#files)). 1.0.1 was
 [the desktop input fix](docs/DESKTOP_FIX_1.0.1.md). Backend tests and portable
 runtime verification are automated, and the real GTK acceptance run passed on
@@ -37,7 +38,12 @@ of this release.
 
 ## Files
 
-Choose **Files → Add entry**, pick the file and optionally add a title and notes. The
+The quickest way: unlock ClaraKey and **drag files onto its window** from your file manager. Each one is
+stored right away, titled with its name (two files with the same name get their folder added, for example
+`keystore.properties (.clara-release)`), all in one encrypted save. Folders and files over the limit are
+skipped with a note in the status bar. Or choose **Files → Add entry**, browse to the file (the browser has
+Home, Desktop, Downloads, Documents and This drive shortcuts, and shows hidden folders) and optionally add a
+title and notes. The
 file's bytes, name and notes are encrypted inside the vault like every other entry;
 the original stays where it was. **Save file…** writes an exact unencrypted copy after
 a confirmation, with owner-only permissions, and never overwrites an existing file.
