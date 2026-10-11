@@ -24,6 +24,18 @@ from .storage import PortableStore, read_external
 from .totp import code_at, remaining, normalize_secret, parse_uri
 
 
+ASSETS = Path(__file__).with_name('assets')
+APP_ICON = 'org.clarakey.ClaraKey'
+
+
+def picture(name, size):
+    """A bundled brand image at a fixed size; missing artwork never stops the vault from opening."""
+    widget = Gtk.Image.new_from_file(str(ASSETS / name))
+    widget.set_pixel_size(size)
+    widget.set_halign(Gtk.Align.CENTER)
+    return widget
+
+
 def box(vertical=True, spacing=12, css=None):
     widget = Gtk.Box(orientation=Gtk.Orientation.VERTICAL if vertical else Gtk.Orientation.HORIZONTAL, spacing=spacing)
     if css:
@@ -122,6 +134,9 @@ class ClaraKeyApp(Gtk.Application):
         css = Gtk.CssProvider()
         css.load_from_path(str(Path(__file__).with_name('theme.css')))
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        # The app icon ships with the code, so the window shows the ClaraKey logo even from a USB drive.
+        Gtk.IconTheme.get_for_display(Gdk.Display.get_default()).add_search_path(str(ASSETS))
+        Gtk.Window.set_default_icon_name(APP_ICON)
         self.window = Gtk.ApplicationWindow(application=self, title='ClaraKey • Portable Authentication Vault')
         self.window.set_default_size(1100, 760)
         self.window.set_size_request(860, 600)
@@ -220,12 +235,11 @@ class ClaraKeyApp(Gtk.Application):
         outer.set_valign(Gtk.Align.CENTER)
         outer.set_halign(Gtk.Align.CENTER)
         outer.set_size_request(500, -1)
-        outer.append(label('C L A R A K E Y', 'eyebrow'))
+        outer.append(picture('logo.png', 240))
         card = box(spacing=18, css='login-card')
         card.set_size_request(480, -1)
-        card.append(label('Welcome to ClaraKey' if self.creating else 'CLARAKEY', 'heading'))
-        card.append(label('Your keys. Your drive. Your control.', 'muted'))
-        card.append(label('Create New Vault' if self.creating else 'Unlock your portable vault', 'subheading'))
+        card.append(label('Create your vault' if self.creating else 'Unlock your vault', 'heading'))
+        card.append(label('Everything stays encrypted on this drive.', 'muted'))
         card.append(label('Master Password', 'muted'))
         self.master = Gtk.PasswordEntry(show_peek_icon=True)
         self.master.set_property('enable-undo', False)
@@ -298,7 +312,10 @@ class ClaraKeyApp(Gtk.Application):
         row.set_vexpand(True)
         sidebar = box(spacing=8, css='sidebar')
         sidebar.set_size_request(220, -1)
-        sidebar.append(label('CLARAKEY', 'brand'))
+        brand = box(False, 10)
+        brand.append(picture('icon.png', 40))
+        brand.append(label('CLARAKEY', 'brand'))
+        sidebar.append(brand)
         sidebar.append(label('PORTABLE VAULT', 'eyebrow'))
         sidebar.append(margins(label('YOUR COLLECTION', 'muted'), 10))
         self.nav = {}

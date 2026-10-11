@@ -1,3 +1,5 @@
+<p align="center"><img src="brand/clarakey-logo.png" alt="ClaraKey: your keys, your control" width="320"></p>
+
 # ClaraKey
 
 A portable, local-first encrypted authentication vault for Linux. Carry TOTP
@@ -5,7 +7,8 @@ accounts, recovery codes, API tokens, SSH private keys, passwords and private no
 on an ordinary USB drive. No cloud, account, telemetry, analytics, subscription or
 network service is part of ClaraKey. Normal operation is offline.
 
-**Release status:** 1.1.0 adds encrypted file storage (see [Files](#files)). 1.0.1 was
+**Release status:** 1.2.0 adds the new logo and a one-click PC icon (see
+[Open it with one click](#open-it-with-one-click)). 1.1.0 added encrypted file storage (see [Files](#files)). 1.0.1 was
 [the desktop input fix](docs/DESKTOP_FIX_1.0.1.md). Backend tests and portable
 runtime verification are automated, and the real GTK acceptance run passed on
 2026-10-10 (Xvfb, GTK 4.22.4). Read [the exact test results](docs/TEST_RESULTS.md)
@@ -84,6 +87,22 @@ a new vault is created in `vault/`. ClaraKey resolves the application directory,
 not the terminal working directory. `--portable-dir /absolute/path` explicitly
 selects a different existing portable directory for development or recovery; it
 never silently falls back to the host home directory.
+
+## Open it with one click
+
+Run this once from the `ClaraKey` folder on your drive:
+
+```sh
+./add-to-this-pc.sh --pin
+```
+
+It adds a **ClaraKey** icon to the app grid and pins it to the GNOME dock. Clicking it mounts the drive if
+needed and starts the ClaraKey on it; if the drive isn't plugged in, it says so. The PC gets only a small
+launcher script, a desktop entry and the icon, never the vault. No administrator rights are used.
+`./add-to-this-pc.sh --remove` takes it off again. Without `--pin` the icon goes in the app grid only.
+
+Recent Ubuntu releases no longer mount ext4 USB drives automatically (a rule in `e2fsprogs`), so a drive
+can't offer to start ClaraKey on its own when plugged in; the icon does the mounting instead.
 
 ## Create and use a vault
 

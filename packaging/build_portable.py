@@ -114,7 +114,9 @@ shutil.copy2(ROOT/'packaging/AppRun',OUT/'ClaraKey')
 shutil.copy2(ROOT/'packaging/AppRun',OUT/'AppRun')
 for name in ('ClaraKey','AppRun'): (OUT/name).chmod(0o755)
 shutil.copy2(ROOT/'packaging/clarakey.desktop',OUT/'clarakey.desktop')
-shutil.copy2(ROOT/'packaging/clarakey.svg',OUT/'clarakey.svg')
+shutil.copy2(ROOT/'packaging/clarakey.png',OUT/'clarakey.png')
+shutil.copy2(ROOT/'packaging/add-to-this-pc.sh',OUT/'add-to-this-pc.sh')
+(OUT/'add-to-this-pc.sh').chmod(0o755)
 (OUT/'README.txt').write_text('ClaraKey portable Linux vault\n\nRun ./ClaraKey from a trusted Linux desktop. Keep this whole directory together.\nVault data stays in vault/ and encrypted copies in backups/.\nSee README.md, SECURITY.md and docs/TEST_RESULTS.md before using real credentials.\n')
 
 # Preserve vendor copyright/license notices for all bundled installed packages.
