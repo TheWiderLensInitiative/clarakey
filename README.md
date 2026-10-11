@@ -1,5 +1,9 @@
 <p align="center"><img src="brand/clarakey-logo.png" alt="ClaraKey: your keys, your control" width="320"></p>
 
+<p align="center"><a href="https://clarakey.thewiderlens.info">clarakey.thewiderlens.info</a> ·
+<a href="https://github.com/TheWiderLensInitiative/clarakey/releases/latest">Download</a> ·
+<a href="docs/PRIVACY.md">Privacy</a> · <a href="SECURITY.md">Security</a> · clarakey@thewiderlens.info</p>
+
 # ClaraKey
 
 A portable, local-first encrypted authentication vault for Linux. Carry TOTP
